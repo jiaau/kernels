@@ -1,0 +1,15 @@
+CompileFlags:
+  Add:
+    - --no-cuda-version-check
+    - -I/usr/local/cuda12-6/include
+    - -I/root/kernel-workspace/kernels/src/utils
+  Remove:
+    [
+      "-rdc=true",
+      "--options-file",
+      "-forward-unknown-to-host-compiler",
+      "-arch",
+      "--generate-code=arch=compute_86,code=[compute_86,sm_86]",
+      "-Xcicc",
+      "-Xptxas",
+    ]
