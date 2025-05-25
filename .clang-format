@@ -19,6 +19,8 @@ AccessModifierOffset: -4
 AllowAllConstructorInitializersOnNextLine: true
 BreakConstructorInitializers: AfterColon
 
+AlwaysBreakTemplateDeclarations: Yes
+
 BinPackArguments: false
 BinPackParameters: false
 ReflowComments: true

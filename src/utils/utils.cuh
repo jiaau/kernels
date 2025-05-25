@@ -20,7 +20,8 @@ __device__ __forceinline__ void ld_st_128bit(void *dst, void *src) {
  * \brief Fill data with random values
  * \tparam T data type, should be fp type
  */
-template <typename T> void fill_data(T *data, int n) {
+template <typename T>
+void fill_data(T *data, int n) {
     srand(time(0));
     for (int i = 0; i < n; i++) {
 #ifdef DEBUG
@@ -40,19 +41,28 @@ bool diff(Atype a, Btype b, int n, float atol = 1e-2) {
         auto error = (float)a[i] - (float)b[i];
         // check abosulte error
         if (std::abs(error) > atol) {
-            std::cout << " \033[1;31mDifference found at index " << i << ": a["
-                      << i << "] = " << (float)a[i] << ", b[" << i
-                      << "] = " << (float)b[i] << "\033[0m\n";
+            std::cout << " \033[1;31mDifference found at index " << i << ": a[" << i
+                      << "] = " << (float)a[i] << ", b[" << i << "] = " << (float)b[i]
+                      << "\033[0m\n";
             return true;
         }
     }
     return false;
 }
 
-#define CHECK_TEST(test)                                                       \
-    if (!test) {                                                               \
-        std::cout << "\033[1;31m" << #test << " failed\033[0m\n";              \
-        return 1;                                                              \
-    } else {                                                                   \
-        std::cout << "\033[1;32m" << #test << " passed\033[0m\n";              \
+#define CHECK_TEST(test)                                                                 \
+    if (!test) {                                                                         \
+        std::cout << "\033[1;31m" << #test << " failed\033[0m\n";                        \
+        return 1;                                                                        \
+    } else {                                                                             \
+        std::cout << "\033[1;32m" << #test << " passed\033[0m\n";                        \
     }
+
+#define MAX_NUM_THREADS 1024
+
+template <typename T>
+inline T round_up_thread(T m) {
+    T d = 32, limit = MAX_NUM_THREADS;
+    T x = m > limit ? limit : m;
+    return ((x + d - 1) / d) * d;
+}
