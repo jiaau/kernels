@@ -64,6 +64,8 @@ bool test_sgemm_512x512_x512(
             cudaDeviceSynchronize();
         }
         auto t1 = std::chrono::high_resolution_clock::now();
+        std::string line(90, '-');
+        std::cout << line << std::endl;
         std::cout << "sgemm time: "
                   << std::chrono::duration_cast<std::chrono::microseconds>((t1 - t0) /
                                                                            times)

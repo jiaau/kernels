@@ -38,7 +38,7 @@ make clean
 例如：
 
 ```bash
-make run "<kernel_name> --bench --times 10"
+make run <kernel_name> -- --bench --times 10
 ```
 
 ## Acknowledgments

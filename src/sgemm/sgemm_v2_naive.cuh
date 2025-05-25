@@ -48,6 +48,12 @@ __global__ void sgemm_v2_naive(float *__restrict__ a,
         FLOAT4(r_load_a[0]) = FLOAT4(a[load_a_gmem_addr]);
         FLOAT4(r_load_b[0]) = FLOAT4(b[load_b_gmem_addr]);
 
+        // When (tid/32) is even, use (tid+32)>>1; when odd, use (tid-32)>>1
+        /*
+        if (tid % 2) {
+            if (tid < 256) { load_a_smem_m = (tid + 32 - 64 * ((tid >> 5) & 1)) >> 1; }
+        }
+        */
         if (tid % 2) {
             if (1 <= tid && tid <= 31) {
                 load_a_smem_m = (tid + 32) >> 1;
@@ -85,6 +91,11 @@ __global__ void sgemm_v2_naive(float *__restrict__ a,
             } else {
                 int y1 = ty * TM / 2;
                 int y2 = ty * TM / 2 + BM / 2;
+                // When (y/16) is even, add 16; when odd, subtract 16
+                /*
+                if (y1 < 128) { y1 = y1 + 16 - 32 * ((y1 >> 4) & 1); }
+                if (y2 < 128) { y2 = y2 + 16 - 32 * ((y2 >> 4) & 1); }
+                */
                 if (0 <= y1 && y1 < 16) {
                     y1 += 16;
                 } else if (16 <= y1 && y1 < 32) {
