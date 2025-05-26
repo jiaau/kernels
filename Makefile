@@ -22,13 +22,10 @@ install:
 	cd $(BUILD_DIR) && make $(filter-out $@,$(MAKECMDGOALS))
 
 run:
-	@CMDARGS="$(filter-out $@,$(MAKECMDGOALS))" && \
-	PROG=$$(echo $$CMDARGS | awk '{print $$1}') && \
+	@CMDARGS="$(filter-out $@,$(MAKECMDGOALS))"; \
+	PROG=$$(echo "$$CMDARGS" | awk '{print $$1}'); \
 	if [ -z "$$PROG" ]; then \
-		echo "Error: Program name not specified. Usage: make run <program_name> [-- <arguments>]"; \
-		exit 1; \
-	elif [ "$$PROG" = "--" ]; then \
-		echo "Error: Program name not specified before --. Usage: make run <program_name> [-- <arguments>]"; \
+		echo "Error: Program name not specified. Usage: make run <program_name> [arguments]"; \
 		exit 1; \
 	elif [ -f "$(EXE_DIR)/$$PROG" ]; then \
 		PROGPATH="$(EXE_DIR)/$$PROG"; \
@@ -37,13 +34,10 @@ run:
 	else \
 		echo "Error: $$PROG not found in $(EXE_DIR) or $(EXE_EXAMPLE_DIR)"; \
 		exit 1; \
-	fi && \
-	if echo "$$CMDARGS" | grep -q " -- "; then \
-		ARGS=$$(echo "$$CMDARGS" | sed "s/^[^ ]* -- //"); \
-		$$PROGPATH $$ARGS; \
-	else \
-		$$PROGPATH; \
-	fi
+	fi; \
+	ARGS=$$(echo "$$CMDARGS" | sed -E 's/^[^ ]+[ ]*//'); \
+	echo "Executing: $$PROGPATH $$ARGS"; \
+	$$PROGPATH $$ARGS
 
 ncu:
 	@PROG=$(filter-out $@,$(MAKECMDGOALS)) && \
