@@ -10,6 +10,6 @@ set(CMAKE_CUDA_ARCHITECTURES 86)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/utils)
 
-add_executable(sgemm src/sgemm/sgemm.cu)
+add_subdirectory(src)
 
-add_executable(reduce src/reduce/reduce.cu)
+add_subdirectory(examples)
