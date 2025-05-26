@@ -12,6 +12,10 @@
 
 改进版本，消除了 load 的 bank conflict，提高了性能，但是引入了 store 的 bank conflict。
 
+为什么 load 没有 bank conflict？
+
+分析后可以得到 tid=0 和 tid=8 访问了 smem 的同一 bank0，但是 smem 一次 transaction 最大为 128 字节，tid0-tid7 在同一批 transaction 中，tid8-tid15 在下一批 transaction 中，因此不会发生 bank conflict。具体细节查看 [How to understand the bank conflict of shared_mem](https://forums.developer.nvidia.com/t/how-to-understand-the-bank-conflict-of-shared-mem/260900)。
+
 ```txt
 sgemm::sgemm_v2(float *, float *, float *, int, int, int) (4, 4, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.9
     Section: Command line profiler metrics
@@ -53,6 +57,8 @@ s_a[load_a_smem_k + 3][load_a_smem_m] = r_load_a[3];
 ### 3. sgemm_v2_naive.cuh
 
 v2消除 store bank conflict 的朴素实现版本，作为对比参考。
+
+此版本虽然消除了 store bank conflict，但是由于存在过多分支判断，导致 warp divergence，降低了性能。
 
 ### 4. sgemm_v2_bitop.cuh
 
