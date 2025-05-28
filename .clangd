@@ -3,6 +3,7 @@ CompileFlags:
     - --no-cuda-version-check
     - -I/usr/local/cuda12-6/include
     - -I/root/kernel-workspace/kernels/src/utils
+    - -I/root/kernel-workspace/kernels/3rdparty/cutlass/include
   Remove:
     [
       "-rdc=true",

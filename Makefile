@@ -6,6 +6,18 @@ STATS := gpu__time_active.sum
 STATS := $(STATS),l1tex__data_bank_conflicts_pipe_lsu_mem_shared.sum
 STATS := $(STATS),l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_ld.sum
 STATS := $(STATS),l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_st.sum
+STATS := $(STATS),sm__sass_l1tex_data_bank_conflicts_pipe_lsu_mem_shared_op_ldsm.sum
+STATS := $(STATS),sm__sass_l1tex_data_bank_conflicts_pipe_lsu_mem_shared_op_st.sum
+
+# global memory transactions
+STATS := $(STATS),l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum
+STATS := $(STATS),l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum
+STATS := $(STATS),l1tex__average_t_sectors_per_request_pipe_lsu_mem_global_op_ld.ratio
+STATS := $(STATS),smsp__sass_average_data_bytes_per_sector_mem_global_op_ld.pct
+STATS := $(STATS),l1tex__t_sectors_pipe_lsu_mem_global_op_st.sum
+STATS := $(STATS),l1tex__t_requests_pipe_lsu_mem_global_op_st.sum
+STATS := $(STATS),l1tex__average_t_sectors_per_request_pipe_lsu_mem_global_op_st.ratio
+STATS := $(STATS),smsp__sass_average_data_bytes_per_sector_mem_global_op_st.pct
 
 BUILD_DIR := /root/kernel-workspace/kernels/build
 EXE_DIR := $(BUILD_DIR)/src

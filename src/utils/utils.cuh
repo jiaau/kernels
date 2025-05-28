@@ -50,12 +50,12 @@ bool diff(Atype a, Btype b, int n, float atol = 1e-2) {
     return false;
 }
 
-#define CHECK_TEST(test)                                                                 \
-    if (!test) {                                                                         \
-        std::cout << "\033[1;31m" << #test << " failed\033[0m\n";                        \
+#define CHECK_TEST(...)                                                                  \
+    if (!(__VA_ARGS__)) {                                                                \
+        std::cout << "\033[1;31m" << #__VA_ARGS__ << " failed\033[0m\n";                 \
         return 1;                                                                        \
     } else {                                                                             \
-        std::cout << "\033[1;32m" << #test << " passed\033[0m\n";                        \
+        std::cout << "\033[1;32m" << #__VA_ARGS__ << " passed\033[0m\n";                 \
     }
 
 #define MAX_NUM_THREADS 1024

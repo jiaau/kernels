@@ -2,7 +2,7 @@
 Language: Cpp
 Standard: c++17
 
-ColumnLimit: 90
+ColumnLimit: 100
 
 TabWidth: 4
 UseTab: Never
