@@ -2,6 +2,8 @@
 
 ## Reference
 
+- [Oneflow-Inc/oneflow](https://github.com/Oneflow-Inc/oneflow/blob/master/oneflow/core/cuda/softmax.cuh)
+
 - [zhihu/ZhiLight](https://github.com/zhihu/ZhiLight/blob/main/3rd/bmengine/bmengine/functions/arthmetic.cu)
 
 - [Faster Parallel Reductions on Kepler](https://developer.nvidia.com/blog/faster-parallel-reductions-kepler/)

@@ -1,45 +1,26 @@
 #pragma once
 
+#include "reduce_utils.cuh"
 #include "utils.cuh"
 
 namespace reduce {
 
-template <typename T>
-__inline__ __device__ T threadMax(T a, T b) {
-    return (a > b) ? a : b;
-}
-
-template <typename T>
-__inline__ __device__ T warpReduceMax(T x) {
-#pragma unroll
-    for (int offset = 16; offset > 0; offset /= 2)
-        x = threadMax<T>(x, __shfl_down_sync(0xFFFFFFFF, x, offset));
-    return x;
-}
-
-template <typename T>
-__inline__ __device__ T blockReduceMax(T x) {
-    static __shared__ T shared[32];
-    int lane = threadIdx.x % 32;
-    int wid = threadIdx.x / 32;
-    x = warpReduceMax<T>(x);
-    if (lane == 0) shared[wid] = x;
-    __syncthreads();
-    x = (threadIdx.x < blockDim.x / 32) ? shared[lane] : T(-INFINITY);
-    if (wid == 0) { x = warpReduceMax<T>(x); }
-    return x;
-}
-
-// gridDim (n, 1, 1),   blockDim (head_len, 1, 1)
-static __global__ void max_kernel(float *in, float *out, const int head_len) {
-    float local_max = -INFINITY;
-    for (int i = threadIdx.x; i < head_len; i += blockDim.x) {
-        int offset = OFFSET(blockIdx.x, i, head_len);
-        local_max = threadMax(local_max, in[offset]);
+// gridDim (rows, 1, 1),   blockDim (block_size, 1, 1)
+template <typename T, int block_size>
+static __global__ void max_kernel(const T *in, T *out, const size_t cols) {
+    T thread_max = -Inf<T>();
+    for (size_t i = threadIdx.x; i < cols; i += block_size) {
+        size_t offset = OFFSET(blockIdx.x, i, cols);
+        thread_max = MaxOp<T>()(thread_max, in[offset]);
     }
-    local_max = blockReduceMax(local_max);
+    T row_max = block_all_reduce<MaxOp, T, block_size>(thread_max);
 
-    if (threadIdx.x == 0) out[blockIdx.x] = local_max;
+    if (threadIdx.x == 0) out[blockIdx.x] = row_max;
+}
+
+template <typename T, int block_size>
+void gpu_max(const size_t rows, const size_t cols, const T *in, T *out) {
+    max_kernel<T, block_size><<<rows, block_size>>>(in, out, cols);
 }
 
 } // namespace reduce

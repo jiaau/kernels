@@ -35,7 +35,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    CHECK_TEST(test_sum_512x512(reduce::sum_kernel, bench, times));
-    CHECK_TEST(test_max_512x512(reduce::max_kernel, bench, times));
+    using namespace reduce;
+    CHECK_TEST(test_sum_1024x2048(gpu_sum<float, 512>, bench, times));
+    CHECK_TEST(test_max_1024x2048(gpu_max<float, 512>, bench, times));
     return 0;
 }

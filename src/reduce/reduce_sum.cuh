@@ -1,40 +1,26 @@
 #pragma once
 
+#include "reduce_utils.cuh"
 #include "utils.cuh"
 
 namespace reduce {
 
-template <typename T>
-__inline__ __device__ T warpReduceSum(T x) {
-#pragma unroll
-    for (int offset = 16; offset > 0; offset /= 2)
-        x += __shfl_down_sync(0xFFFFFFFF, x, offset);
-    return x;
-}
-
-template <typename T>
-__inline__ __device__ T blockReduceSum(T x) {
-    static __shared__ T shared[32];
-    int lane = threadIdx.x % 32;
-    int wid = threadIdx.x / 32;
-    x = warpReduceSum<T>(x);
-    if (lane == 0) shared[wid] = x;
-    __syncthreads();
-    x = (threadIdx.x < blockDim.x / 32) ? shared[lane] : T(0.);
-    if (wid == 0) { x = warpReduceSum<T>(x); }
-    return x;
-}
-
-// gridDim (n, 1, 1),   blockDim (head_len, 1, 1)
-static __global__ void sum_kernel(float *in, float *out, const int head_len) {
-    float local_sum = 0.0f;
-    for (int i = threadIdx.x; i < head_len; i += blockDim.x) {
-        int offset = OFFSET(blockIdx.x, i, head_len);
-        local_sum += in[offset];
+// gridDim (rows, 1, 1),   blockDim (block_size, 1, 1)
+template <typename T, int block_size>
+static __global__ void sum_kernel(const T *in, T *out, const size_t cols) {
+    T thread_sum = 0.0;
+    for (size_t i = threadIdx.x; i < cols; i += block_size) {
+        size_t offset = OFFSET(blockIdx.x, i, cols);
+        thread_sum = SumOp<T>()(thread_sum, in[offset]);
     }
-    local_sum = blockReduceSum(local_sum);
+    T row_sum = block_all_reduce<SumOp, T, block_size>(thread_sum);
 
-    if (threadIdx.x == 0) out[blockIdx.x] = local_sum;
+    if (threadIdx.x == 0) out[blockIdx.x] = row_sum;
+}
+
+template <typename T, int block_size>
+void gpu_sum(const size_t rows, const size_t cols, const T *in, T *out) {
+    sum_kernel<T, block_size><<<rows, block_size>>>(in, out, cols);
 }
 
 } // namespace reduce
