@@ -1,5 +1,24 @@
 # Kernels
 
+## 关注点
+
+- [reduce](./src/reduce)
+    - CUDA Warp-Level Primitives
+    - Parallel reduction
+
+- [transpose](./src/transpose)
+    - Memory Coalescing
+    - Shared Memory
+    - Bank Conflict
+    - Swizzling
+    - CuTe
+
+- [sgemm](./src/sgemm)
+    - Tile Size Tuning
+    - Shared Memory
+    - Bank Conflict
+    - Double Buffer
+
 ## 编译与运行
 
 ### 编译项目
