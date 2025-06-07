@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     }
 
     using namespace reduce;
-    CHECK_TEST(test_sum_1024x2048(gpu_sum<float, 512>, bench, times));
-    CHECK_TEST(test_max_1024x2048(gpu_max<float, 512>, bench, times));
+    CHECK_TEST(test_sum(gpu_sum<float, 512>, bench, times));
+    CHECK_TEST(test_max(gpu_max<float, 512>, bench, times));
     return 0;
 }

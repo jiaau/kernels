@@ -1,16 +1,15 @@
 #pragma once
 
 #include <chrono>
-#include <cstddef>
 #include "utils.cuh"
 
 namespace reduce {
 
 template <typename T>
-void cpu_max(const size_t rows, const size_t cols, const T *in, T *out) {
-    for (size_t i = 0; i < rows; i++) {
+void cpu_max(const T *in, T *out, const int64_t rows, const int64_t cols) {
+    for (int64_t i = 0; i < rows; i++) {
         T pmax = -INFINITY;
-        for (size_t j = 0; j < cols; j++) {
+        for (int64_t j = 0; j < cols; j++) {
             pmax = std::max(pmax, in[OFFSET(i, j, cols)]);
         }
         out[i] = pmax;
@@ -22,12 +21,11 @@ void cpu_max(const size_t rows, const size_t cols, const T *in, T *out) {
  * \note Computes row-wise max of a 1024x2048 matrix, resulting in a 1024-element vector
  * \note Validates results against CPU reference implementation
  */
-bool test_max_1024x2048(void (*gpu_max)(const size_t, const size_t, const float *, float *),
-                        bool bench = false,
-                        int times = 3) {
-    const size_t rows = 1024;
-    const size_t cols = 2048;
-    const size_t n = rows * cols;
+template <int64_t rows = 1024, int64_t cols = 2048>
+bool test_max(void (*gpu_max)(const float *, float *, const int64_t, const int64_t),
+              bool bench = false,
+              int times = 3) {
+    const int64_t n = rows * cols;
     float *in_h = (float *)malloc(n * sizeof(float));
     float *out_h = (float *)malloc(rows * sizeof(float));
 
@@ -39,21 +37,21 @@ bool test_max_1024x2048(void (*gpu_max)(const size_t, const size_t, const float 
 
     cudaMemcpy(in_d, in_h, n * sizeof(float), cudaMemcpyHostToDevice);
 
-    gpu_max(rows, cols, in_d, out_d);
+    gpu_max(in_d, out_d, rows, cols);
 
     cudaDeviceSynchronize();
     cudaMemcpy(out_h, out_d, rows * sizeof(float), cudaMemcpyDeviceToHost);
 
     float *out_h_ref = (float *)malloc(rows * sizeof(float));
 
-    cpu_max(rows, cols, in_h, out_h_ref);
+    cpu_max(in_h, out_h_ref, rows, cols);
 
     bool ret = !diff(out_h, out_h_ref, rows);
 
     if (ret && bench) {
         auto t0 = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < times; i++) {
-            gpu_max(rows, cols, in_d, out_d);
+            gpu_max(in_d, out_d, rows, cols);
             cudaDeviceSynchronize();
         }
         auto t1 = std::chrono::high_resolution_clock::now();

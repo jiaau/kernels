@@ -72,4 +72,26 @@ __inline__ __device__ T block_all_reduce(T val) {
 //     return result_broadcast;
 // }
 
+inline cudaError_t
+GetNumBlocks(int64_t block_size, int64_t max_blocks, int64_t waves, int *num_blocks) {
+    int dev;
+    {
+        cudaError_t err = cudaGetDevice(&dev);
+        if (err != cudaSuccess) { return err; }
+    }
+    int sm_count;
+    {
+        cudaError_t err = cudaDeviceGetAttribute(&sm_count, cudaDevAttrMultiProcessorCount, dev);
+        if (err != cudaSuccess) { return err; }
+    }
+    int tpm;
+    {
+        cudaError_t err = cudaDeviceGetAttribute(&tpm, cudaDevAttrMaxThreadsPerMultiProcessor, dev);
+        if (err != cudaSuccess) { return err; }
+    }
+    *num_blocks =
+        std::max<int>(1, std::min<int64_t>(max_blocks, sm_count * tpm / block_size * waves));
+    return cudaSuccess;
+}
+
 } // namespace reduce

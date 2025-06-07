@@ -1,15 +1,16 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include "utils.cuh"
 
 namespace reduce {
 
 template <typename T>
-void cpu_sum(const size_t rows, const size_t cols, const T *in, T *out) {
-    for (size_t i = 0; i < rows; i++) {
+void cpu_sum(const int64_t rows, const int64_t cols, const T *in, T *out) {
+    for (int64_t i = 0; i < rows; i++) {
         T psum = 0.0;
-        for (size_t j = 0; j < cols; j++) {
+        for (int64_t j = 0; j < cols; j++) {
             psum += in[OFFSET(i, j, cols)];
         }
         out[i] = psum;
@@ -21,12 +22,11 @@ void cpu_sum(const size_t rows, const size_t cols, const T *in, T *out) {
  * \note Computes row-wise sum of a 1024x2048 matrix, resulting in a 1024-element vector
  * \note Validates results against CPU reference implementation
  */
-bool test_sum_1024x2048(void (*gpu_sum)(const size_t, const size_t, const float *, float *),
-                        bool bench = false,
-                        int times = 3) {
-    const size_t rows = 1024;
-    const size_t cols = 2048;
-    const size_t n = rows * cols;
+template <int64_t rows = 1024, int64_t cols = 2048>
+bool test_sum(void (*gpu_sum)(const float *, float *, const int64_t, const int64_t),
+              bool bench = false,
+              int times = 3) {
+    const int64_t n = rows * cols;
     float *in_h = (float *)malloc(n * sizeof(float));
     float *out_h = (float *)malloc(rows * sizeof(float));
 
@@ -38,7 +38,7 @@ bool test_sum_1024x2048(void (*gpu_sum)(const size_t, const size_t, const float 
 
     cudaMemcpy(in_d, in_h, n * sizeof(float), cudaMemcpyHostToDevice);
 
-    gpu_sum(rows, cols, in_d, out_d);
+    gpu_sum(in_d, out_d, rows, cols);
 
     cudaDeviceSynchronize();
     cudaMemcpy(out_h, out_d, rows * sizeof(float), cudaMemcpyDeviceToHost);
@@ -52,7 +52,7 @@ bool test_sum_1024x2048(void (*gpu_sum)(const size_t, const size_t, const float 
     if (ret && bench) {
         auto t0 = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < times; i++) {
-            gpu_sum(rows, cols, in_d, out_d);
+            gpu_sum(in_d, out_d, rows, cols);
             cudaDeviceSynchronize();
         }
         auto t1 = std::chrono::high_resolution_clock::now();
