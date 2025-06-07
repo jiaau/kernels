@@ -58,7 +58,7 @@ s_a[load_a_smem_k + 3][load_a_smem_m] = r_load_a[3];
 
 v2消除 store bank conflict 的朴素实现版本，作为对比参考。
 
-此版本虽然消除了 store bank conflict，但是由于存在过多分支判断，导致 warp divergence，降低了性能。
+此版本虽然消除了 store bank conflict，但是由于存在过多分支判断，导致 [warp divergence](../../examples/divergence)，降低了性能。
 
 ### 4. sgemm_v2_bitop.cuh
 
@@ -111,3 +111,5 @@ make ncu sgemm
 - [CUDA（三）：通用矩阵乘法：从入门到熟练](https://zhuanlan.zhihu.com/p/657632577)
 
 - [How to understand the bank conflict of shared_mem](https://forums.developer.nvidia.com/t/how-to-understand-the-bank-conflict-of-shared-mem/260900)
+
+- [Why are CUDA vector types (int4, float4) faster?](https://stackoverflow.com/questions/31447619/why-are-cuda-vector-types-int4-float4-faster)

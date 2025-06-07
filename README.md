@@ -18,6 +18,8 @@
     - Shared Memory
     - Bank Conflict
     - Double Buffer
+    - Warp Divergence
+    - Vectorized memory access
 
 ## 编译与运行
 
