@@ -6,6 +6,7 @@
 #include "transpose_cute_coalesced.cuh"
 #include "transpose_cute_conflict_free.cuh"
 #include "transpose_cute_naive.cuh"
+#include "transpose_cute_naive_colfax.cuh"
 #include "utils.cuh"
 
 void print_usage() {
@@ -38,35 +39,37 @@ int main(int argc, char **argv) {
         }
     }
 
-    // clang-format off
-    
+    using namespace transpose;
     // cuda
 
     // naive
-    CHECK_TEST(test_transpose_1024x2048<32, 8>(transpose::transpose_naive<32, 8>, bench, times));
-    CHECK_TEST(test_transpose_1024x2048<32, 32>(transpose::transpose_naive<32, 32>, bench, times));
+    CHECK_TEST(test_transpose(transpose_naive<32, 8>, bench, times));
+    CHECK_TEST(test_transpose(transpose_naive<32, 32>, bench, times));
     
     // coalesced
-    CHECK_TEST(test_transpose_1024x2048<32, 8>(transpose::transpose_cuda_coalesced<32, 8>, bench, times));
-    CHECK_TEST(test_transpose_1024x2048<32, 32>(transpose::transpose_cuda_coalesced<32, 32>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cuda_coalesced<32, 8>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cuda_coalesced<32, 32>, bench, times));
 
     // conflict free
-    CHECK_TEST(test_transpose_1024x2048<32, 8>(transpose::transpose_cuda_conflict_free<32, 8>, bench, times));
-    CHECK_TEST(test_transpose_1024x2048<32, 32>(transpose::transpose_cuda_conflict_free<32, 32>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cuda_conflict_free<32, 8>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cuda_conflict_free<32, 32>, bench, times));
 
     // cute
 
+    // colfax
+    CHECK_TEST(test_transpose(transpose_cute_naive_colfax<float, 32, 8>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cute_naive_colfax<float, 32, 32>, bench, times));
+
     // naive
-    CHECK_TEST(test_transpose_1024x2048<32, 8>(transpose::transpose_cute_naive<32, 8>, bench, times));
-    CHECK_TEST(test_transpose_1024x2048<32, 32>(transpose::transpose_cute_naive<32, 32>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cute_naive<float, 32, 8>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cute_naive<float, 32, 32>, bench, times));
 
     // coalesced
-    CHECK_TEST(test_transpose_1024x2048<32, 8>(transpose::transpose_cute_coalesced<32, 8>, bench, times));
-    CHECK_TEST(test_transpose_1024x2048<32, 32>(transpose::transpose_cute_coalesced<32, 32>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cute_coalesced<float, 32, 8>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cute_coalesced<float, 32, 32>, bench, times));
 
     // conflict free
-    CHECK_TEST(test_transpose_1024x2048<32, 8>(transpose::transpose_cute_conflict_free<32, 8>, bench, times));
-    CHECK_TEST(test_transpose_1024x2048<32, 32>(transpose::transpose_cute_conflict_free<32, 32>, bench, times));
-
+    CHECK_TEST(test_transpose(transpose_cute_conflict_free<float, 32, 8>, bench, times));
+    CHECK_TEST(test_transpose(transpose_cute_conflict_free<float, 32, 32>, bench, times));
     return 0;
 }

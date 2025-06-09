@@ -1,32 +1,38 @@
 #pragma once
 
+#include "transpose_utils.cuh"
 #include "utils.cuh"
 
 namespace transpose {
 
-// gridDim (n/TILE_N, m/TILE_M, 1),   blockDim (THREAD_X, THREAD_Y, 1)
-template <unsigned THREAD_X = 32, unsigned THREAD_Y = 8>
-__global__ void transpose_cuda_coalesced(float *out, const float *in, const int m, const int n) {
-    const int TILE_M = 32;
-    const int TILE_N = 32;
+// gridDim (n/TILE_N, m/TILE_M, 1),   blockDim (BLOCK_M, BLOCK_N, 1)
+__global__ void
+transpose_cuda_coalesced_kernel(float *out, const float *in, const int64_t M, const int64_t N) {
 
-    __shared__ float tile[32][32];
+    __shared__ float tile[TILE_M][TILE_N];
 
-    int row = blockIdx.y * TILE_M + threadIdx.y;
-    int col = blockIdx.x * TILE_N + threadIdx.x;
+    int row_in = blockIdx.y * TILE_M + threadIdx.y;
+    int col_in = blockIdx.x * TILE_N + threadIdx.x;
 
-    for (int j = 0; j < TILE_M; j += THREAD_Y)
+    for (int j = 0; j < TILE_M; j += blockDim.y)
         tile[threadIdx.x][threadIdx.y + j] =
-            in[OFFSET(row + j, col, n)]; // read by row, write by column
+            in[OFFSET(row_in + j, col_in, N)]; // read by row, write by column
 
     __syncthreads();
 
-    int n_col = blockIdx.y * TILE_M + threadIdx.x;
-    int n_row = blockIdx.x * TILE_N + threadIdx.y;
+    int row_out = blockIdx.x * TILE_N + threadIdx.y;
+    int col_out = blockIdx.y * TILE_M + threadIdx.x;
 
-    for (int j = 0; j < TILE_M; j += THREAD_Y)
-        out[OFFSET(n_row + j, n_col, m)] =
+    for (int j = 0; j < TILE_M; j += blockDim.y)
+        out[OFFSET(row_out + j, col_out, M)] =
             tile[threadIdx.y + j][threadIdx.x]; // read by row, write by row
+}
+
+template <unsigned BLOCK_M = 32, unsigned BLOCK_N = 8>
+void transpose_cuda_coalesced(float *out, const float *in, const int64_t M, const int64_t N) {
+    dim3 gridDim(N / TILE_N, M / TILE_M, 1);
+    dim3 blockDim(BLOCK_M, BLOCK_N, 1);
+    transpose_cuda_coalesced_kernel<<<gridDim, blockDim>>>(out, in, M, N);
 }
 
 } // namespace transpose

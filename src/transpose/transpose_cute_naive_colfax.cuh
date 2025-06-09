@@ -2,53 +2,58 @@
 
 #include <cute/tensor.hpp>
 
+#include "transpose_utils.cuh"
+
 namespace transpose {
 
 using namespace cute;
 
 // gridDim (n/TILE_N, m/TILE_M, 1),   blockDim (THREAD_X, THREAD_Y, 1)
-template <unsigned threadX = 32, unsigned threadY = 8>
-__global__ void transpose_cute_naive_colfax(float *out, const float *in, const int m, const int n) {
-    //
+template <class TensorS, class TensorD, class ThreadLayoutS, class ThreadLayoutD>
+__global__ void
+transpose_cute_naive_colfax_kernel(TensorS S, TensorD D, ThreadLayoutS tS, ThreadLayoutD tD) {
+    Tensor gS = S(make_coord(_, _), blockIdx.y, blockIdx.x); // (tileM, tileN)
+    Tensor gD = D(make_coord(_, _), blockIdx.y, blockIdx.x); // (tileN, tileM)
+
+    auto tid = threadIdx.y * blockDim.x + threadIdx.x;
+
+    Tensor tSgS = local_partition(gS, tS, tid); // (ThrValM, ThrValN)
+    Tensor tDgD = local_partition(gD, tD, tid);
+
+    Tensor rmem = make_tensor_like(tSgS);
+
+    copy(tSgS, rmem);
+    copy(rmem, tDgD);
+}
+
+template <typename T = float, unsigned BLOCK_M = 32, unsigned BLOCK_N = 8>
+void transpose_cute_naive_colfax(T *out, const T *in, const int64_t M, const int64_t N) {
     // Make Tensors
-    //
-    auto tensor_shape = make_shape(m, n);
-    auto gemem_layout_in = make_layout(tensor_shape, LayoutRight{});
-    Tensor tensor_in = make_tensor(make_gmem_ptr(in), gemem_layout_in);
+    auto shape = make_shape(M, N);
+    auto gmemLayoutS = make_layout(shape, LayoutRight{});
+    Tensor tensor_s = make_tensor(make_gmem_ptr(in), gmemLayoutS);
 
-    // Make a transposed view of the output
-    auto gemem_layout_out_trans = make_layout(tensor_shape, GenColMajor{});
-    Tensor tensor_out_trans = make_tensor(make_gmem_ptr(out), gemem_layout_out_trans);
+    auto gmemLayoutDT = make_layout(shape, GenColMajor{});
+    Tensor tensor_dt = make_tensor(make_gmem_ptr(out), gmemLayoutDT);
 
-    //
     // Tile tensors
-    //
-    using tileM = Int<32>;
-    using tileN = Int<32>;
+    using tileM = Int<TILE_M>;
+    using tileN = Int<TILE_N>;
 
     auto block_shape = make_shape(tileM{}, tileN{}); // (tileM, tileN)
-    // auto block_shape = make_shape(blockDim.x, blockDim.x);
 
-    Tensor tiled_tensor_in = tiled_divide(tensor_in, block_shape); // ((tileM, tileN), m', n')
-    Tensor tiled_tensor_out_trans =
-        tiled_divide(tensor_out_trans, block_shape); // ((tileM, tileN), m', n')
+    Tensor tiled_tensor_s = tiled_divide(tensor_s, block_shape); // ((tileM, tileN), m', n')
+    Tensor tiled_tensor_dt = tiled_divide(tensor_dt, block_shape); // ((tileM, tileN), m', n')
 
-    Tensor g_in = tiled_tensor_in(make_coord(_, _), blockIdx.y, blockIdx.x); // (tileM, tileN)
-    Tensor g_out_trans =
-        tiled_tensor_out_trans(make_coord(_, _), blockIdx.y, blockIdx.x); // (tileM, tileN)
+    auto threadLayoutS =
+        make_layout(make_shape(Int<BLOCK_N>{}, Int<BLOCK_M>{}), LayoutRight{}); 
+    auto threadLayoutDT =
+        make_layout(make_shape(Int<BLOCK_N>{}, Int<BLOCK_M>{}), LayoutRight{});
 
-    auto thread_layout = make_layout(make_shape(Int<threadY>{}, Int<threadX>{}), LayoutRight{});
-
-    Tensor t_g_in = local_partition(g_in,
-                                    thread_layout,
-                                    threadIdx.y * blockDim.x + threadIdx.x); // (ThrValM, ThrValN)
-    Tensor t_g_out_trans =
-        local_partition(g_out_trans, thread_layout, threadIdx.y * blockDim.x + threadIdx.x);
-
-    Tensor rmem = make_tensor_like(t_g_in);
-
-    copy(t_g_in, rmem);
-    copy(rmem, t_g_out_trans);
+    dim3 gridDim(N / TILE_N, M / TILE_M, 1);
+    dim3 blockDim(BLOCK_M, BLOCK_N, 1);
+    transpose_cute_naive_colfax_kernel<<<gridDim, blockDim>>>(
+        tiled_tensor_s, tiled_tensor_dt, threadLayoutS, threadLayoutDT);
 }
 
 } // namespace transpose

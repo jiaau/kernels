@@ -12,7 +12,7 @@
 
 ## Question
 
-### 32x2 线程相比 32x8 线程，会引入额外的冲突
+### 32x32 线程相比 32x8 线程，会引入额外的冲突
 
 ### 使用 32x32 线程时，transpose_cuda_coalesced 和 transpose_cute_coalesced 的冲突次数表现存在差异
 
