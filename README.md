@@ -21,6 +21,11 @@
     - Warp Divergence
     - Vectorized memory access
 
+- [softmax](./src/softmax)
+    - Indexing Tips
+    - Generic Programming
+    - Parallel reduction
+
 ## 编译与运行
 
 ### 编译项目
